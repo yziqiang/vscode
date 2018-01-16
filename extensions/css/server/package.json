@@ -9,7 +9,8 @@
   },
   "dependencies": {
     "vscode-css-languageservice": "^3.0.3",
-    "vscode-languageserver": "^3.5.0"
+    "vscode-languageserver": "^3.5.0",
+    "vscode-emmet-helper": "1.1.20"
   },
   "devDependencies": {
     "@types/node": "7.0.43"

@@ -24,6 +24,16 @@ export interface Settings {
 	css?: any;
 	html?: any;
 	javascript?: any;
+	emmet?: EmmetSettings;
+}
+
+// TODO: This should come from vscode-emmet-helper.d.ts which doesnt exist at the moment
+export interface EmmetSettings {
+	preferences?: { [key: string]: any };
+	showSuggestionsAsSnippets?: boolean;
+	variables?: { [key: string]: string };
+	extensionsPath?: string;
+	showExpandedAbbreviation?: string;
 }
 
 export interface SettingProvider {
@@ -35,6 +45,7 @@ export interface LanguageMode {
 	configure?: (options: Settings) => void;
 	doValidation?: (document: TextDocument, settings?: Settings) => Diagnostic[];
 	doComplete?: (document: TextDocument, position: Position, settings?: Settings) => CompletionList | null;
+	setCompletionParticipants?: (registeredCompletionParticipants: any[]) => void;
 	doResolve?: (document: TextDocument, item: CompletionItem) => CompletionItem | null;
 	doHover?: (document: TextDocument, position: Position) => Hover | null;
 	doSignatureHelp?: (document: TextDocument, position: Position) => SignatureHelp | null;

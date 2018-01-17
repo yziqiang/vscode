@@ -2,6 +2,10 @@
 # yarn lockfile v1
 
 
+"@emmetio/extract-abbreviation@^0.1.1":
+  version "0.1.3"
+  resolved "https://registry.yarnpkg.com/@emmetio/extract-abbreviation/-/extract-abbreviation-0.1.3.tgz#dc00bf488ddf86a2a82ca95fb2ccb575bd832f68"
+
 "@types/mocha@2.2.33":
   version "2.2.33"
   resolved "https://registry.yarnpkg.com/@types/mocha/-/mocha-2.2.33.tgz#d79a0061ec270379f4d9e225f4096fb436669def"
@@ -16,6 +20,13 @@ vscode-css-languageservice@^3.0.3:
   dependencies:
     vscode-languageserver-types "3.5.0"
     vscode-nls "^2.0.1"
+
+vscode-emmet-helper@1.1.20:
+  version "1.1.20"
+  resolved "https://registry.yarnpkg.com/vscode-emmet-helper/-/vscode-emmet-helper-1.1.20.tgz#7523dc7f635f74e4becc44d4e519a9db5055a023"
+  dependencies:
+    "@emmetio/extract-abbreviation" "^0.1.1"
+    vscode-languageserver-types "^3.0.3"
 
 vscode-html-languageservice@^2.0.14:
   version "2.0.14"
@@ -36,7 +47,7 @@ vscode-languageserver-protocol@^3.5.0:
     vscode-jsonrpc "^3.5.0"
     vscode-languageserver-types "^3.5.0"
 
-vscode-languageserver-types@3.5.0, vscode-languageserver-types@^3.5.0:
+vscode-languageserver-types@3.5.0, vscode-languageserver-types@^3.0.3, vscode-languageserver-types@^3.5.0:
   version "3.5.0"
   resolved "https://registry.yarnpkg.com/vscode-languageserver-types/-/vscode-languageserver-types-3.5.0.tgz#e48d79962f0b8e02de955e3f524908e2b19c0374"
 

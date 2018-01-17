@@ -13,11 +13,10 @@ import { TextDocument, CompletionList } from 'vscode-languageserver-types';
 import { ConfigurationRequest } from 'vscode-languageserver-protocol/lib/protocol.configuration.proposed';
 import { DocumentColorRequest, ServerCapabilities as CPServerCapabilities, ColorPresentationRequest } from 'vscode-languageserver-protocol/lib/protocol.colorProvider.proposed';
 
-import { getCSSLanguageService, getSCSSLanguageService, getLESSLanguageService, LanguageSettings, LanguageService, Stylesheet } from 'vscode-css-languageservice';
+import { getCSSLanguageService, getSCSSLanguageService, getLESSLanguageService, LanguageSettings, LanguageService, Stylesheet, ICompletionParticipant } from 'vscode-css-languageservice';
 import { getLanguageModelCache } from './languageModelCache';
 import { formatError, runSafe } from './utils/errors';
 import { doComplete as emmetDoComplete, updateExtensionsPath as updateEmmetExtensionsPath } from 'vscode-emmet-helper';
-import { isAbsolute, join } from 'path';
 
 export interface Settings {
 	css: LanguageSettings;
@@ -61,8 +60,9 @@ connection.onShutdown(() => {
 	stylesheets.dispose();
 });
 
-let workspaceRootPath: string;
 let scopedSettingsSupport = false;
+const emmetTriggerCharacters = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+
 // After the server has started the client sends an initilize request. The server receives
 // in the passed params the rootPath of the workspace plus the client capabilities.
 connection.onInitialize((params: InitializeParams): InitializeResult => {
@@ -79,7 +79,7 @@ connection.onInitialize((params: InitializeParams): InitializeResult => {
 	let capabilities: ServerCapabilities & CPServerCapabilities = {
 		// Tell the client that the server works in FULL text document sync mode
 		textDocumentSync: documents.syncKind,
-		completionProvider: snippetSupport ? { resolveProvider: false, triggerCharacters: ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'] } : undefined,
+		completionProvider: snippetSupport ? { resolveProvider: false, triggerCharacters: emmetTriggerCharacters } : undefined,
 		hoverProvider: true,
 		documentSymbolProvider: true,
 		referencesProvider: true,
@@ -89,7 +89,6 @@ connection.onInitialize((params: InitializeParams): InitializeResult => {
 		renameProvider: true,
 		colorProvider: true
 	};
-	workspaceRootPath = params.rootUri;
 	return { capabilities };
 });
 
@@ -141,12 +140,8 @@ function updateConfiguration(settings: Settings) {
 	documents.all().forEach(triggerValidation);
 
 	emmetSettings = settings.emmet;
-	let extensionsPath = emmetSettings.extensionsPath;
-	if (extensionsPath && !isAbsolute(extensionsPath) && workspaceRootPath) {
-		extensionsPath = join(workspaceRootPath, extensionsPath);
-	}
-	if (currentEmmetExtensionsPath !== extensionsPath) {
-		currentEmmetExtensionsPath = extensionsPath;
+	if (currentEmmetExtensionsPath !== emmetSettings.extensionsPath) {
+		currentEmmetExtensionsPath = emmetSettings.extensionsPath;
 		updateEmmetExtensionsPath(currentEmmetExtensionsPath);
 	}
 }
@@ -199,23 +194,21 @@ connection.onCompletion(textDocumentPosition => {
 	return runSafe(() => {
 		let document = documents.get(textDocumentPosition.textDocument.uri);
 		let emmetCompletionList: CompletionList;
-		const emmetCompletionParticipant = {
-			onProperty: (propertyName, propertyValue) => {
+		const emmetCompletionParticipant: ICompletionParticipant = {
+			onCssProperty: (propertyName, propertyValue) => {
 				if (propertyName) {
 					emmetCompletionList = emmetDoComplete(document, textDocumentPosition.position, document.languageId, emmetSettings);
 				}
 			},
-			onPropertyValue: (propertyName, propertyValue) => {
+			onCssPropertyValue: (propertyName, propertyValue) => {
 				if (hexColorRegex.test(propertyValue)) {
 					emmetCompletionList = emmetDoComplete(document, textDocumentPosition.position, document.languageId, emmetSettings);
 				}
 			}
 		};
 
-		// TODO: If triggerCharacter is a number, and current word is not a hex color, return only emmet completions
-
-		// TODO: If current request is to complete a previous request, re-calculate only emmet completions
-		// merge with cache of previous request and return it.
+		// TODO: Return the cached results of previous request updated with new emmet completions if
+		// previous request was of the incomplete type.
 
 		getLanguageService(document).setCompletionParticipants([emmetCompletionParticipant]);
 
@@ -223,9 +216,7 @@ connection.onCompletion(textDocumentPosition => {
 		let stylesheet = stylesheets.get(document);
 		let result = getLanguageService(document).doComplete(document, textDocumentPosition.position, stylesheet)!; /* TODO: remove ! once LS has null annotations */
 		if (emmetCompletionList && emmetCompletionList.items && emmetCompletionList.items.length) {
-
 			// TODO: Cache result.items before merging emmet results
-
 			result.items.push(...emmetCompletionList.items);
 			result.isIncomplete = true;
 		}

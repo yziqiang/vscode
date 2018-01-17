@@ -5,7 +5,7 @@
 'use strict';
 
 import { getLanguageModelCache } from '../languageModelCache';
-import { LanguageService as HTMLLanguageService, HTMLDocument, DocumentContext, FormattingOptions, HTMLFormatConfiguration } from 'vscode-html-languageservice';
+import { LanguageService as HTMLLanguageService, HTMLDocument, DocumentContext, FormattingOptions, HTMLFormatConfiguration, ICompletionParticipant } from 'vscode-html-languageservice';
 import { TextDocument, Position, Range } from 'vscode-languageserver-types';
 import { LanguageMode, Settings } from './languageModes';
 
@@ -26,6 +26,9 @@ export function getHTMLMode(htmlLanguageService: HTMLLanguageService): LanguageM
 				options.hideAutoCompleteProposals = true;
 			}
 			return htmlLanguageService.doComplete(document, position, htmlDocuments.get(document), options);
+		},
+		setCompletionParticipants(registeredCompletionParticipants: ICompletionParticipant[]) {
+			htmlLanguageService.setCompletionParticipants(registeredCompletionParticipants);
 		},
 		doHover(document: TextDocument, position: Position) {
 			return htmlLanguageService.doHover(document, position, htmlDocuments.get(document));

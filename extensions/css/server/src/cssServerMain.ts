@@ -194,12 +194,22 @@ function validateTextDocument(textDocument: TextDocument): void {
 	});
 }
 
+const hexColorRegex = /^#[\d,a-f,A-F]+$/;
 connection.onCompletion(textDocumentPosition => {
 	return runSafe(() => {
 		let document = documents.get(textDocumentPosition.textDocument.uri);
 		let emmetCompletionList: CompletionList;
-		const addEmmetCompletions = () => {
-			emmetCompletionList = emmetDoComplete(document, textDocumentPosition.position, document.languageId, emmetSettings);
+		const emmetCompletionParticipant = {
+			onProperty: (propertyName, propertyValue) => {
+				if (propertyName) {
+					emmetCompletionList = emmetDoComplete(document, textDocumentPosition.position, document.languageId, emmetSettings);
+				}
+			},
+			onPropertyValue: (propertyName, propertyValue) => {
+				if (hexColorRegex.test(propertyValue)) {
+					emmetCompletionList = emmetDoComplete(document, textDocumentPosition.position, document.languageId, emmetSettings);
+				}
+			}
 		};
 
 		// TODO: If triggerCharacter is a number, and current word is not a hex color, return only emmet completions
@@ -207,7 +217,7 @@ connection.onCompletion(textDocumentPosition => {
 		// TODO: If current request is to complete a previous request, re-calculate only emmet completions
 		// merge with cache of previous request and return it.
 
-		getLanguageService(document).setEmmetCallback(addEmmetCompletions);
+		getLanguageService(document).setCompletionParticipants([emmetCompletionParticipant]);
 
 		// TODO: Clear Cache
 		let stylesheet = stylesheets.get(document);

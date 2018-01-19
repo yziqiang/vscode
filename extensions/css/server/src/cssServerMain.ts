@@ -34,6 +34,7 @@ export interface EmmetSettings {
 }
 let emmetSettings: EmmetSettings = {};
 let currentEmmetExtensionsPath: string;
+const emmetTriggerCharacters = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
 
 // Create a connection for the server.
 let connection: IConnection = createConnection();
@@ -61,7 +62,6 @@ connection.onShutdown(() => {
 });
 
 let scopedSettingsSupport = false;
-const emmetTriggerCharacters = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
 
 // After the server has started the client sends an initilize request. The server receives
 // in the passed params the rootPath of the workspace plus the client capabilities.
@@ -190,9 +190,23 @@ function validateTextDocument(textDocument: TextDocument): void {
 }
 
 const hexColorRegex = /^#[\d,a-f,A-F]+$/;
+let cachedCompletionList: CompletionList;
 connection.onCompletion(textDocumentPosition => {
 	return runSafe(() => {
-		let document = documents.get(textDocumentPosition.textDocument.uri);
+		const document = documents.get(textDocumentPosition.textDocument.uri);
+		const triggerForIncompleteCompletions = false; //TODO: Use the new completion context to get this value
+		if (triggerForIncompleteCompletions && cachedCompletionList && !cachedCompletionList.isIncomplete) {
+			let result: CompletionList = emmetDoComplete(document, textDocumentPosition.position, document.languageId, emmetSettings);
+			if (result && result.items && result.items.length) {
+				result.items.push(...cachedCompletionList.items);
+			} else {
+				result = cachedCompletionList;
+				cachedCompletionList = null;
+			}
+			return result;
+		}
+
+		cachedCompletionList = null;
 		let emmetCompletionList: CompletionList;
 		const emmetCompletionParticipant: ICompletionParticipant = {
 			onCssProperty: (propertyName, propertyValue) => {
@@ -206,17 +220,11 @@ connection.onCompletion(textDocumentPosition => {
 				}
 			}
 		};
-
-		// TODO: Return the cached results of previous request updated with new emmet completions if
-		// previous request was of the incomplete type.
-
 		getLanguageService(document).setCompletionParticipants([emmetCompletionParticipant]);
 
-		// TODO: Clear Cache
-		let stylesheet = stylesheets.get(document);
-		let result = getLanguageService(document).doComplete(document, textDocumentPosition.position, stylesheet)!; /* TODO: remove ! once LS has null annotations */
+		const result = getLanguageService(document).doComplete(document, textDocumentPosition.position, stylesheets.get(document))!; /* TODO: remove ! once LS has null annotations */
 		if (emmetCompletionList && emmetCompletionList.items && emmetCompletionList.items.length) {
-			// TODO: Cache result.items before merging emmet results
+			cachedCompletionList = { isIncomplete: result.isIncomplete, items: [...result.items] };
 			result.items.push(...emmetCompletionList.items);
 			result.isIncomplete = true;
 		}

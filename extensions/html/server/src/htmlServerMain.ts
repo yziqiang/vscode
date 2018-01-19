@@ -241,51 +241,60 @@ async function validateTextDocument(textDocument: TextDocument) {
 }
 
 const hexColorRegex = /^#[\d,a-f,A-F]+$/;
+let cachedCompletionList: CompletionList;
 connection.onCompletion(async textDocumentPosition => {
 	return runSafe(async () => {
 		let document = documents.get(textDocumentPosition.textDocument.uri);
 		let mode = languageModes.getModeAtPosition(document, textDocumentPosition.position);
-		let emmetCompletionList: CompletionList;
-		const emmetCompletionParticipant = {
-			onCssProperty: (propertyName, propertyValue) => {
-				if (propertyName) {
-					emmetCompletionList = emmetDoComplete(document, textDocumentPosition.position, mode.getId(), emmetSettings);
-				}
-			},
-			onCssPropertyValue: (propertyName, propertyValue) => {
-				if (hexColorRegex.test(propertyValue)) {
-					emmetCompletionList = emmetDoComplete(document, textDocumentPosition.position, mode.getId(), emmetSettings);
-				}
-			},
-			onHtmlContent: () => {
-				emmetCompletionList = emmetDoComplete(document, textDocumentPosition.position, mode.getId(), emmetSettings);
-			}
-		};
+		if (!mode || !mode.doComplete) {
+			return { isIncomplete: true, items: [] };
+		}
 
-		// TODO: Return the cached results of previous request updated with new emmet completions if
-		// previous request was of the incomplete type.
-
-		if (mode && mode.doComplete) {
-			let doComplete = mode.doComplete;
-			if (mode.getId() !== 'html') {
-				connection.telemetry.logEvent({ key: 'html.embbedded.complete', value: { languageId: mode.getId() } });
-			}
-			if (mode.setCompletionParticipants) {
-				mode.setCompletionParticipants([emmetCompletionParticipant]);
-			}
-
-			// TODO: Clear Cache
-
-			let settings = await getDocumentSettings(document, () => doComplete.length > 2);
-			let result = doComplete(document, textDocumentPosition.position, settings);
-			if (emmetCompletionList && emmetCompletionList.items && emmetCompletionList.items.length) {
-				// TODO: Cache result.items before merging emmet results
-				result.items.push(...emmetCompletionList.items);
-				result.isIncomplete = true;
+		const triggerForIncompleteCompletions = false; //TODO: Use the new completion context to get this value
+		if (triggerForIncompleteCompletions && cachedCompletionList && !cachedCompletionList.isIncomplete && (mode.getId() === 'html' || mode.getId() === 'css')) {
+			let result: CompletionList = emmetDoComplete(document, textDocumentPosition.position, mode.getId(), emmetSettings);
+			if (result && result.items && result.items.length) {
+				result.items.push(...cachedCompletionList.items);
+			} else {
+				result = cachedCompletionList;
+				cachedCompletionList = null;
 			}
 			return result;
 		}
-		return { isIncomplete: true, items: [] };
+
+		if (mode.getId() !== 'html') {
+			connection.telemetry.logEvent({ key: 'html.embbedded.complete', value: { languageId: mode.getId() } });
+		}
+
+		cachedCompletionList = null;
+		let emmetCompletionList: CompletionList;
+		if (mode.setCompletionParticipants) {
+			const emmetCompletionParticipant = {
+				onCssProperty: (propertyName, propertyValue) => {
+					if (propertyName) {
+						emmetCompletionList = emmetDoComplete(document, textDocumentPosition.position, mode.getId(), emmetSettings);
+					}
+				},
+				onCssPropertyValue: (propertyName, propertyValue) => {
+					if (hexColorRegex.test(propertyValue)) {
+						emmetCompletionList = emmetDoComplete(document, textDocumentPosition.position, mode.getId(), emmetSettings);
+					}
+				},
+				onHtmlContent: () => {
+					emmetCompletionList = emmetDoComplete(document, textDocumentPosition.position, mode.getId(), emmetSettings);
+				}
+			};
+			mode.setCompletionParticipants([emmetCompletionParticipant]);
+		}
+
+		let settings = await getDocumentSettings(document, () => mode.doComplete.length > 2);
+		let result = mode.doComplete(document, textDocumentPosition.position, settings);
+		if (emmetCompletionList && emmetCompletionList.items && emmetCompletionList.items.length) {
+			cachedCompletionList = { isIncomplete: result.isIncomplete, items: [...result.items] };
+			result.items.push(...emmetCompletionList.items);
+			result.isIncomplete = true;
+		}
+		return result;
 	}, null, `Error while computing completions for ${textDocumentPosition.textDocument.uri}`);
 });
 

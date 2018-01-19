@@ -8,12 +8,12 @@
     "node": "*"
   },
   "dependencies": {
-    "vscode-css-languageservice": "^3.0.3",
-    "vscode-html-languageservice": "^2.0.14",
+    "vscode-css-languageservice": "^3.0.4",
+    "vscode-html-languageservice": "^2.0.15",
     "vscode-languageserver": "^3.5.0",
     "vscode-nls": "^2.0.2",
     "vscode-uri": "^1.0.1",
-    "vscode-emmet-helper": "1.1.20"
+    "vscode-emmet-helper": "1.1.21"
   },
   "devDependencies": {
     "@types/mocha": "2.2.33",

@@ -202,13 +202,13 @@ connection.onCompletion(textDocumentPosition => {
 		cachedCompletionList = null;
 		let emmetCompletionList: CompletionList;
 		const emmetCompletionParticipant: ICompletionParticipant = {
-			onCssProperty: (propertyName, propertyValue) => {
-				if (propertyName) {
+			onCssProperty: (context) => {
+				if (context && context.propertyName) {
 					emmetCompletionList = emmetDoComplete(document, textDocumentPosition.position, document.languageId, emmetSettings);
 				}
 			},
-			onCssPropertyValue: (propertyName, propertyValue) => {
-				if (hexColorRegex.test(propertyValue)) {
+			onCssPropertyValue: (context) => {
+				if (context && hexColorRegex.test(context.propertyValue)) {
 					emmetCompletionList = emmetDoComplete(document, textDocumentPosition.position, document.languageId, emmetSettings);
 				}
 			}

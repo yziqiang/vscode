@@ -270,13 +270,13 @@ connection.onCompletion(async textDocumentPosition => {
 		let emmetCompletionList: CompletionList;
 		if (mode.setCompletionParticipants) {
 			const emmetCompletionParticipant = {
-				onCssProperty: (propertyName, propertyValue) => {
-					if (propertyName) {
+				onCssProperty: (context) => {
+					if (context && context.propertyName) {
 						emmetCompletionList = emmetDoComplete(document, textDocumentPosition.position, mode.getId(), emmetSettings);
 					}
 				},
-				onCssPropertyValue: (propertyName, propertyValue) => {
-					if (hexColorRegex.test(propertyValue)) {
+				onCssPropertyValue: (context) => {
+					if (context && hexColorRegex.test(context.propertyValue)) {
 						emmetCompletionList = emmetDoComplete(document, textDocumentPosition.position, mode.getId(), emmetSettings);
 					}
 				},

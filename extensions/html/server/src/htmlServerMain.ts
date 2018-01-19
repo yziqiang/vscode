@@ -6,7 +6,7 @@
 
 import { createConnection, IConnection, TextDocuments, InitializeParams, InitializeResult, RequestType, DocumentRangeFormattingRequest, Disposable, DocumentSelector, TextDocumentPositionParams, ServerCapabilities, Position } from 'vscode-languageserver';
 import { TextDocument, Diagnostic, DocumentLink, SymbolInformation, CompletionList } from 'vscode-languageserver-types';
-import { getLanguageModes, LanguageModes, Settings, EmmetSettings } from './modes/languageModes';
+import { getLanguageModes, LanguageModes, Settings } from './modes/languageModes';
 
 import { ConfigurationRequest, ConfigurationParams } from 'vscode-languageserver-protocol/lib/protocol.configuration.proposed';
 import { DocumentColorRequest, ServerCapabilities as CPServerCapabilities, ColorInformation, ColorPresentationRequest } from 'vscode-languageserver-protocol/lib/protocol.colorProvider.proposed';
@@ -74,7 +74,7 @@ function getDocumentSettings(textDocument: TextDocument, needsDocumentSettings: 
 	return Promise.resolve(void 0);
 }
 
-let emmetSettings: EmmetSettings = {};
+let emmetSettings = {};
 let currentEmmetExtensionsPath: string;
 const emmetTriggerCharacters = ['!', '.', '}', ':', '*', '$', ']', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
 
@@ -177,8 +177,8 @@ connection.onDidChangeConfiguration((change) => {
 	}
 
 	emmetSettings = globalSettings.emmet;
-	if (currentEmmetExtensionsPath !== emmetSettings.extensionsPath) {
-		currentEmmetExtensionsPath = emmetSettings.extensionsPath;
+	if (currentEmmetExtensionsPath !== emmetSettings['extensionsPath']) {
+		currentEmmetExtensionsPath = emmetSettings['extensionsPath'];
 		updateEmmetExtensionsPath(currentEmmetExtensionsPath);
 	}
 });

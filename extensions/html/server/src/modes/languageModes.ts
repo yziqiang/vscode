@@ -24,16 +24,7 @@ export interface Settings {
 	css?: any;
 	html?: any;
 	javascript?: any;
-	emmet?: EmmetSettings;
-}
-
-// TODO: This should come from vscode-emmet-helper.d.ts which doesnt exist at the moment
-export interface EmmetSettings {
-	preferences?: { [key: string]: any };
-	showSuggestionsAsSnippets?: boolean;
-	variables?: { [key: string]: string };
-	extensionsPath?: string;
-	showExpandedAbbreviation?: string;
+	emmet?: { [key: string]: any };
 }
 
 export interface SettingProvider {

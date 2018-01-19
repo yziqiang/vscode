@@ -22,17 +22,10 @@ export interface Settings {
 	css: LanguageSettings;
 	less: LanguageSettings;
 	scss: LanguageSettings;
-	emmet: EmmetSettings;
+	emmet: { [key: string]: any };
 }
 
-export interface EmmetSettings {
-	preferences?: { [key: string]: any };
-	showSuggestionsAsSnippets?: boolean;
-	variables?: { [key: string]: string };
-	extensionsPath?: string;
-	showExpandedAbbreviation?: string;
-}
-let emmetSettings: EmmetSettings = {};
+let emmetSettings = {};
 let currentEmmetExtensionsPath: string;
 const emmetTriggerCharacters = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
 
@@ -140,8 +133,8 @@ function updateConfiguration(settings: Settings) {
 	documents.all().forEach(triggerValidation);
 
 	emmetSettings = settings.emmet;
-	if (currentEmmetExtensionsPath !== emmetSettings.extensionsPath) {
-		currentEmmetExtensionsPath = emmetSettings.extensionsPath;
+	if (currentEmmetExtensionsPath !== emmetSettings['extensionsPath']) {
+		currentEmmetExtensionsPath = emmetSettings['extensionsPath'];
 		updateEmmetExtensionsPath(currentEmmetExtensionsPath);
 	}
 }
